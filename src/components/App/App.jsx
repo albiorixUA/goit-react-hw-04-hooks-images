@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import Searchbar from '../Searchbar';
 import ImageGallery from '../ImageGallery';
 import ImageGalleryItem from '../ImageGalleryItem';
@@ -13,110 +13,66 @@ const Status = {
   LOADED: 'loaded',
 };
 
-export default class App extends Component {
-  state = {
-    pictureName: '',
-    pictureData: '',
-    pictureModal: '',
-    status: null,
-    page: 1,
-  };
+export default function App() {
+  const [{ pictureName }, setPictureName] = useState('');
+  const [pictureData, setPictureData] = useState('');
+  const [pictureModal, setPictureModal] = useState('');
+  const [status, setStatus] = useState('');
+  const [page, setPage] = useState('');
 
-  componentDidUpdate(prevState, prevProps) {
-    const prevSearch = prevProps.pictureName;
-    const nextSearch = this.state.pictureName;
-    const nextPage = this.state.page;
-    const prevPage = prevProps.page;
-
-    if (prevSearch !== nextSearch) {
-      this.loadPicture();
-      this.resetData();
+  useEffect(() => {
+    if (!pictureName) {
+      return;
     }
-    if (nextPage > prevPage) {
-      this.loadPicture();
-    }
-    this.scrollToBottom();
-  }
 
-  loadPicture = () => {
-    const { pictureName, page } = this.state;
-    this.setState({ status: Status.LOADING });
+    setStatus(Status.LOADING);
     api
       .fetchPicture(pictureName, page)
       .then(res => {
-        this.setState(prevState => ({
-          pictureData: [...prevState.pictureData, ...res.data.hits],
-          status: Status.LOADED,
-        }));
+        setPictureData(state => [...state, ...res.data.hits]);
+        setStatus(Status.LOADED);
       })
+      .catch(error => console.log(error))
+      .finally(scrollToBottom);
+  }, [page, pictureName]);
 
-      .catch(error => console.log(error));
+  const handleFormSubmit = pictureName => {
+    setPage(1);
+    setPictureName({ pictureName });
+    setPictureData('');
   };
 
-  handleFormSubmit = pictureName => {
-    this.resetPage();
-
-    this.setState({ pictureName });
+  const pictureModalClick = picture => {
+    setPictureModal(picture);
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
-  };
-
-  pictureModalClick = picture => {
-    this.setState({
-      pictureModal: picture,
-    });
-  };
-
-  resetPage() {
-    this.setState({
-      page: 1,
-    });
-  }
-
-  resetData() {
-    this.setState({
-      pictureData: '',
-    });
-  }
-
-  closeModal = () => {
-    this.setState({
-      pictureModal: '',
-    });
-  };
-
-  scrollToBottom() {
+  const scrollToBottom = () => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: 'smooth',
     });
-  }
+  };
 
-  render() {
-    const { status, pictureData, pictureModal } = this.state;
-    return (
-      <div className={s.App}>
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        {status === 'loading' && <LoaderSpiner />}
-        {pictureData.length > 0 && (
-          <ImageGallery>
-            <ImageGalleryItem
-              pictureData={pictureData}
-              onClick={this.pictureModalClick}
-            />
-          </ImageGallery>
-        )}
-        {status === 'loaded' && <LoadMore onClick={this.loadMore} />}
-        {pictureModal.length > 0 && (
-          <Modal onClose={this.closeModal}>
-            <img src={pictureModal} alt="" />
-          </Modal>
-        )}
-      </div>
-    );
-  }
+  return (
+    <div className={s.App}>
+      <Searchbar onSubmit={handleFormSubmit} />
+      {status === Status.LOADING && <LoaderSpiner />}
+      {pictureData.length > 0 && (
+        <ImageGallery>
+          <ImageGalleryItem
+            pictureData={pictureData}
+            onClick={pictureModalClick}
+          />
+        </ImageGallery>
+      )}
+      {status === Status.LOADED && (
+        <LoadMore onClick={() => setPage(state => state + 1)} />
+      )}
+      {pictureModal.length > 0 && (
+        <Modal onClose={() => setPictureModal('')}>
+          <img src={pictureModal} alt="" />
+        </Modal>
+      )}
+    </div>
+  );
 }

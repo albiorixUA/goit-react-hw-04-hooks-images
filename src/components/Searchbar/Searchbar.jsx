@@ -1,43 +1,40 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import s from './Searchbar.module.css';
 
-export default class SearchBar extends Component {
-  state = {
-    pictureName: '',
+export default function Searchbar({ onSubmit }) {
+  const [pictureName, setPictureName] = useState('');
+
+  const handleSearchChange = e => {
+    setPictureName(e.currentTarget.value.toLowerCase());
   };
 
-  handleSearchChange = e => {
-    this.setState({ pictureName: e.currentTarget.value.toLowerCase() });
-  };
-
-  handleSubmit = e => {
+  const handleSubmit = e => {
     e.preventDefault();
-    if (this.state.pictureName.trim() === '') {
+    if (pictureName.trim() === '') {
       return toast.error('Enter a search query');
     }
-    this.props.onSubmit(this.state.pictureName);
+    onSubmit(pictureName);
+    setPictureName('');
   };
 
-  render() {
-    return (
-      <header className={s.Searchbar}>
-        <Toaster />
-        <form onSubmit={this.handleSubmit} className={s.SearchForm}>
-          <button type="submit" className={s.SearchFormButton}>
-            <span className={s.SearchFormButtonLabel}>Search</span>
-          </button>
-          <input
-            className={s.SearchFormInput}
-            value={this.state.pictureName}
-            onChange={this.handleSearchChange}
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-          />
-        </form>
-      </header>
-    );
-  }
+  return (
+    <header className={s.Searchbar}>
+      <Toaster />
+      <form onSubmit={handleSubmit} className={s.SearchForm}>
+        <button type="submit" className={s.SearchFormButton}>
+          <span className={s.SearchFormButtonLabel}>Search</span>
+        </button>
+        <input
+          className={s.SearchFormInput}
+          value={pictureName}
+          onChange={handleSearchChange}
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+        />
+      </form>
+    </header>
+  );
 }
